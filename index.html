@@ -12,7 +12,6 @@
     <title>I Love You 💙</title>
 
     <style>
-
         * {
             margin: 0;
             padding: 0;
@@ -24,38 +23,21 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
+            background: #102241;
         }
 
         body {
-
-            background:
-                radial-gradient(
-                    circle at 50% 45%,
-                    #1C4562 0%,
-                    #102241 45%,
-                    #09162c 100%
-                );
-
             display: flex;
             justify-content: center;
             align-items: center;
-
         }
 
         canvas {
-
-            position: fixed;
-
-            top: 0;
-            left: 0;
-
+            display: block;
             width: 100%;
             height: 100%;
-
         }
-
     </style>
-
 </head>
 
 
@@ -66,9 +48,11 @@
 
 <script>
 
-    /* =========================================
-       CANVAS
-    ========================================= */
+    /*
+    ==========================================================
+    BASIC SETTINGS
+    ==========================================================
+    */
 
     const canvas =
         document.getElementById("canvas");
@@ -77,26 +61,56 @@
         canvas.getContext("2d");
 
 
-    let width;
-    let height;
+    /*
+    Ukuran referensi sama seperti Python
+    */
 
-    let centerX;
-    let centerY;
+    const BASE_WIDTH = 1900;
+    const BASE_HEIGHT = 1000;
 
-    let heartScale;
+    const BASE_SCALE = 24;
+    const BASE_Y_OFFSET = 60;
 
-    let time = 0;
+    const FPS = 60;
 
 
-    /* =========================================
-       COLOR PALETTE
-    ========================================= */
+    /*
+    Warna background dari palette kamu
+    */
 
-    const backgroundColor =
+    const BACKGROUND_COLOR =
         "#102241";
 
 
-    const colors = [
+    /*
+    Kata-katanya sama seperti Python original
+    */
+
+    const WORDS = [
+        "i love you",
+        "I LOVE YOU",
+        "love you"
+    ];
+
+
+    /*
+    Tulisan besar di tengah
+    */
+
+    const CENTER_TEXT =
+        "I Love you";
+
+
+    /*
+    Palette biru yang kamu kirim
+
+    Background:
+    #102241
+
+    Sisanya dipakai random untuk teks.
+    */
+
+    const COLORS = [
 
         "#5399CD",
         "#BDEDFB",
@@ -111,733 +125,713 @@
     ];
 
 
-    /* =========================================
-       RESIZE
-    ========================================= */
+    /*
+    ==========================================================
+    CANVAS SIZE
+    ==========================================================
+    */
 
-    function resizeCanvas() {
+    let width = 0;
+    let height = 0;
 
-        const dpr =
-            window.devicePixelRatio || 1;
+    let displayScale = 1;
 
+    let heartScale = BASE_SCALE;
+    let yOffset = BASE_Y_OFFSET;
 
-        width =
-            window.innerWidth;
+    let centerX = 0;
+    let centerY = 0;
 
-        height =
-            window.innerHeight;
+    let particles = [];
 
+    let outlineParticles = [];
+    let fillParticles = [];
 
-        canvas.width =
-            width * dpr;
+    let frame = 0;
 
-        canvas.height =
-            height * dpr;
-
-
-        canvas.style.width =
-            width + "px";
-
-        canvas.style.height =
-            height + "px";
+    let fillStartFrame = 0;
+    let centerStartFrame = 0;
 
 
-        ctx.setTransform(
-            dpr,
-            0,
-            0,
-            dpr,
-            0,
-            0
+    /*
+    ==========================================================
+    RANDOM HELPERS
+    ==========================================================
+    */
+
+    function randomFloat(min, max) {
+
+        return (
+            Math.random()
+            *
+            (max - min)
+            +
+            min
         );
-
-
-        centerX =
-            width / 2;
-
-
-        centerY =
-            height / 2;
-
-
-        heartScale =
-
-            Math.min(
-                width,
-                height
-            )
-
-            / 39;
 
     }
 
 
-    /* =========================================
-       HEART FORMULA
-    ========================================= */
+    function randomInt(min, max) {
 
-    function getHeartPoint(angle) {
+        return Math.floor(
+
+            Math.random()
+            *
+            (max - min + 1)
+
+        ) + min;
+
+    }
+
+
+    function randomChoice(array) {
+
+        return array[
+            Math.floor(
+                Math.random()
+                *
+                array.length
+            )
+        ];
+
+    }
+
+
+    /*
+    ==========================================================
+    PARTICLE CLASS
+
+    Sama seperti class Particle pada Python.
+    ==========================================================
+    */
+
+    class Particle {
+
+        constructor(
+            x,
+            y,
+            order,
+            kind
+        ) {
+
+            this.x = x;
+
+            this.y = y;
+
+            this.order = order;
+
+            this.kind = kind;
+
+
+            /*
+            Random word
+            */
+
+            this.word =
+                randomChoice(WORDS);
+
+
+            /*
+            Random color
+            */
+
+            this.color =
+                randomChoice(COLORS);
+
+
+            /*
+            Mulai invisible
+            */
+
+            this.alpha = 0;
+
+
+            /*
+            Setiap particle punya
+            phase flicker berbeda
+            */
+
+            this.flicker =
+                randomFloat(
+                    0,
+                    Math.PI * 2
+                );
+
+
+            this.delay = 0;
+
+
+            /*
+            Sama seperti:
+
+            random.uniform(0.85, 1.15)
+            */
+
+            this.sizeMult =
+                randomFloat(
+                    0.85,
+                    1.15
+                );
+
+        }
+
+    }
+
+
+    /*
+    ==========================================================
+    HEART FORMULA
+
+    Sama seperti Python:
+
+    x = 16 sin³(t)
+
+    y =
+    13 cos(t)
+    - 5 cos(2t)
+    - 2 cos(3t)
+    - cos(4t)
+    ==========================================================
+    */
+
+    function heartXY(t) {
 
         const x =
 
-            16 *
-
+            16
+            *
             Math.pow(
-                Math.sin(angle),
+                Math.sin(t),
                 3
             );
 
 
         const y =
 
-            13 * Math.cos(angle)
+            13
+            *
+            Math.cos(t)
 
             -
 
-            5 * Math.cos(
-                2 * angle
+            5
+            *
+            Math.cos(
+                2 * t
             )
 
             -
 
-            2 * Math.cos(
-                3 * angle
+            2
+            *
+            Math.cos(
+                3 * t
             )
 
             -
 
             Math.cos(
-                4 * angle
+                4 * t
             );
 
 
+        /*
+        Python mengembalikan:
+        x, -y
+        */
+
         return {
 
-            x:
-                centerX
-                +
-                x * heartScale,
+            x: x,
 
-            y:
-                centerY
-                -
-                y * heartScale
+            y: -y
 
         };
 
     }
 
 
-    /* =========================================
-       CREATE HEART PATH
-    ========================================= */
+    /*
+    ==========================================================
+    CONVERT HEART COORDINATE TO SCREEN
+    ==========================================================
+    */
 
-    function createHeartPath() {
+    function toScreen(
+        x,
+        y
+    ) {
 
-        ctx.beginPath();
+        return {
+
+            x:
+                x
+                *
+                heartScale
+                +
+                centerX,
+
+            y:
+                y
+                *
+                heartScale
+                +
+                centerY
+                +
+                yOffset
+
+        };
+
+    }
 
 
-        const totalPoints =
-            500;
+    /*
+    ==========================================================
+    DISTANCE
+    ==========================================================
+    */
+
+    function distance(
+        x1,
+        y1,
+        x2,
+        y2
+    ) {
+
+        return Math.hypot(
+            x1 - x2,
+            y1 - y2
+        );
+
+    }
+
+
+    /*
+    ==========================================================
+    BUILD OUTLINE PARTICLES
+
+    Sama seperti:
+
+    build_outline_particles(
+        n_outline=160,
+        min_gap=34
+    )
+    ==========================================================
+    */
+
+    function buildOutlineParticles(
+        nOutline = 160,
+        minGap = 34
+    ) {
+
+        const result = [];
+
+        const placed = [];
+
+
+        /*
+        Gap ikut mengecil / membesar
+        sesuai ukuran layar.
+        */
+
+        const scaledGap =
+            minGap
+            *
+            displayScale;
 
 
         for (
             let i = 0;
-            i <= totalPoints;
+            i < nOutline;
             i++
         ) {
 
-            const angle =
+            const t =
 
                 (
-                    i / totalPoints
+                    i / nOutline
                 )
 
                 *
+                2
+                *
+                Math.PI;
 
-                Math.PI * 2;
+
+            const heart =
+                heartXY(t);
 
 
-            const point =
-                getHeartPoint(angle);
+            const screen =
+                toScreen(
+                    heart.x,
+                    heart.y
+                );
+
+
+            /*
+            Cek jarak minimum
+            */
+
+            let tooClose =
+                false;
+
+
+            for (
+                const point
+                of placed
+            ) {
+
+                if (
+
+                    distance(
+
+                        screen.x,
+                        screen.y,
+
+                        point.x,
+                        point.y
+
+                    )
+
+                    <
+                    scaledGap
+
+                ) {
+
+                    tooClose =
+                        true;
+
+                    break;
+
+                }
+
+            }
 
 
             if (
-                i === 0
+                tooClose
             ) {
 
-                ctx.moveTo(
-                    point.x,
-                    point.y
-                );
+                continue;
 
             }
 
-            else {
 
-                ctx.lineTo(
-                    point.x,
-                    point.y
-                );
+            placed.push({
 
-            }
+                x: screen.x,
+
+                y: screen.y
+
+            });
+
+
+            /*
+            order tetap menggunakan i,
+            persis seperti Python.
+            */
+
+            result.push(
+
+                new Particle(
+
+                    screen.x,
+
+                    screen.y,
+
+                    i,
+
+                    "outline"
+
+                )
+
+            );
 
         }
 
 
-        ctx.closePath();
+        return result;
 
     }
 
 
-    /* =========================================
-       HEART BACKGROUND GLOW
-    ========================================= */
+    /*
+    ==========================================================
+    BUILD FILL PARTICLES
 
-    function drawHeartGlow() {
+    Sama seperti Python:
 
-        ctx.save();
+    t = random.uniform(0, 2π)
 
+    r = random.uniform(0, 0.86)
 
-        createHeartPath();
+    bx, by = heart_xy(t)
 
+    px = bx * r
+    py = by * r
+    ==========================================================
+    */
 
-        ctx.shadowColor =
-            "#94D8F4";
+    function buildFillParticles(
+        nFill = 130,
+        minGap = 46
+    ) {
 
+        const result = [];
 
-        ctx.shadowBlur =
-            45;
-
-
-        ctx.strokeStyle =
-            "rgba(148,216,244,0.22)";
-
-
-        ctx.lineWidth =
-            6;
-
-
-        ctx.stroke();
+        const placed = [];
 
 
-        ctx.restore();
-
-    }
+        let attempts = 0;
 
 
-    /* =========================================
-       REPEATED I LOVE YOU TEXT
-    ========================================= */
-
-    function drawTextHeart() {
-
-        ctx.save();
+        const maxAttempts =
+            nFill
+            *
+            80;
 
 
-        createHeartPath();
-
-        ctx.clip();
-
-
-        const heartWidth =
-            heartScale * 34;
+        const scaledGap =
+            minGap
+            *
+            displayScale;
 
 
-        const heartHeight =
-            heartScale * 31;
+        while (
+
+            result.length
+            <
+            nFill
+
+            &&
+
+            attempts
+            <
+            maxAttempts
+
+        ) {
+
+            attempts++;
 
 
-        const left =
-            centerX
-            -
-            heartWidth / 2;
+            /*
+            Random angle
+            */
+
+            const t =
+                randomFloat(
+                    0,
+                    Math.PI * 2
+                );
 
 
-        const top =
-            centerY
-            -
-            heartHeight / 2;
+            /*
+            Random distance ke tengah
+            */
+
+            const r =
+                randomFloat(
+                    0,
+                    0.86
+                );
 
 
-        const lineHeight =
+            const heart =
+                heartXY(t);
 
-            Math.max(
-                10,
-                heartScale * 0.72
+
+            const px =
+                heart.x
+                *
+                r;
+
+
+            const py =
+                heart.y
+                *
+                r;
+
+
+            const screen =
+                toScreen(
+                    px,
+                    py
+                );
+
+
+            /*
+            Check minimum gap
+            */
+
+            let tooClose =
+                false;
+
+
+            for (
+                const point
+                of placed
+            ) {
+
+                if (
+
+                    distance(
+
+                        screen.x,
+                        screen.y,
+
+                        point.x,
+                        point.y
+
+                    )
+
+                    <
+                    scaledGap
+
+                ) {
+
+                    tooClose =
+                        true;
+
+                    break;
+
+                }
+
+            }
+
+
+            if (
+                tooClose
+            ) {
+
+                continue;
+
+            }
+
+
+            placed.push({
+
+                x: screen.x,
+
+                y: screen.y
+
+            });
+
+
+            /*
+            Ini bagian penting.
+
+            Fill muncul RANDOM,
+            bukan berurutan.
+
+            Sama persis dengan:
+
+            random.randint(0, 320)
+            */
+
+            result.push(
+
+                new Particle(
+
+                    screen.x,
+
+                    screen.y,
+
+                    randomInt(
+                        0,
+                        320
+                    ),
+
+                    "fill"
+
+                )
+
             );
+
+        }
+
+
+        return result;
+
+    }
+
+
+    /*
+    ==========================================================
+    DRAW TEXT WITH GLOW
+
+    Meniru draw_glow_text() Python.
+
+    Ada:
+    - glow besar 2.4x
+    - glow kecil 1.6x
+    - text asli
+    ==========================================================
+    */
+
+    function drawGlowText(
+        particle,
+        alpha
+    ) {
+
+        if (
+            alpha <= 0
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+        Ukuran font sama:
+        outline 20
+        fill 17
+
+        lalu dikalikan sizeMult.
+        */
+
+        const baseSize =
+
+            particle.kind
+            ===
+            "outline"
+
+            ?
+
+            20
+
+            :
+
+            17;
 
 
         const fontSize =
 
-            Math.max(
-                7,
-                heartScale * 0.47
-            );
-
-
-        let row =
-            0;
-
-
-        for (
-
-            let y = top - 20;
-
-            y <
-            top + heartHeight + 30;
-
-            y += lineHeight
-
-        ) {
-
-            const color =
-
-                colors[
-                    row
-                    %
-                    colors.length
-                ];
-
-
-            /*
-              Gerakan kecil horizontal
-              supaya teks terasa hidup,
-              bukan beterbangan.
-            */
-
-            const movement =
-
-                Math.sin(
-                    time * 0.7
-                    +
-                    row * 0.7
-                )
-
-                * 4;
-
-
-            let x =
-
-                left
-                -
-                100
-                +
-                movement;
-
-
-            ctx.font =
-
-                `500 ${fontSize}px Arial`;
-
-
-            ctx.textBaseline =
-                "middle";
-
-
-            ctx.fillStyle =
-                color;
-
-
-            ctx.shadowColor =
-                color;
-
-
-            ctx.shadowBlur =
-                7;
-
-
-            /*
-              Isi satu baris dengan
-              tulisan I Love You
-            */
-
-            while (
-
-                x
-                <
-                left
-                +
-                heartWidth
-                +
-                120
-
-            ) {
-
-                ctx.fillText(
-
-                    "I Love You",
-
-                    x,
-
-                    y
-
-                );
-
-
-                x +=
-
-                    fontSize
-                    *
-                    5.8;
-
-            }
-
-
-            row++;
-
-        }
-
-
-        ctx.restore();
-
-    }
-
-
-    /* =========================================
-       ROTATING SHADOW
-       INI MOTION UTAMA SEPERTI VIDEO
-    ========================================= */
-
-    function drawMovingShadow() {
-
-        ctx.save();
-
-
-        createHeartPath();
-
-        ctx.clip();
-
-
-        /*
-          Shadow bergerak mengelilingi
-          pusat hati.
-        */
-
-        const angle =
-            time * 1.35;
-
-
-        const heartRadius =
-
-            Math.min(
-                width,
-                height
-            )
-
-            * 0.23;
-
-
-        /*
-          Posisi shadow berputar.
-        */
-
-        const orbitRadius =
-
-            heartRadius
-            *
-            0.60;
-
-
-        const shadowX =
-
-            centerX
-
-            +
-
-            Math.cos(angle)
-            *
-            orbitRadius;
-
-
-        const shadowY =
-
-            centerY
-
-            +
-
-            Math.sin(angle)
-            *
-            orbitRadius;
-
-
-        /*
-          Ukuran shadow berubah sedikit.
-
-          Ini yang bikin kadang hati
-          hampir penuh dan kadang
-          sebagian besar gelap.
-        */
-
-        const shadowSize =
-
-            heartRadius
+            baseSize
 
             *
+            displayScale
 
-            (
-                0.80
-
-                +
-
-                Math.sin(
-                    time * 1.35
-                )
-
-                * 0.22
-            );
-
-
-        const gradient =
-
-            ctx.createRadialGradient(
-
-                shadowX,
-                shadowY,
-                shadowSize * 0.05,
-
-                shadowX,
-                shadowY,
-                shadowSize
-
-            );
-
-
-        gradient.addColorStop(
-
-            0,
-
-            "rgba(9,22,44,1)"
-
-        );
-
-
-        gradient.addColorStop(
-
-            0.38,
-
-            "rgba(9,22,44,0.98)"
-
-        );
-
-
-        gradient.addColorStop(
-
-            0.62,
-
-            "rgba(16,34,65,0.88)"
-
-        );
-
-
-        gradient.addColorStop(
-
-            0.82,
-
-            "rgba(16,34,65,0.35)"
-
-        );
-
-
-        gradient.addColorStop(
-
-            1,
-
-            "rgba(16,34,65,0)"
-
-        );
-
-
-        ctx.fillStyle =
-            gradient;
-
-
-        ctx.fillRect(
-
-            centerX
-            -
-            heartRadius * 2,
-
-            centerY
-            -
-            heartRadius * 2,
-
-            heartRadius * 4,
-
-            heartRadius * 4
-
-        );
-
-
-        ctx.restore();
-
-    }
-
-
-    /* =========================================
-       SOFT BLUE LIGHT
-    ========================================= */
-
-    function drawBlueAura() {
-
-        const radius =
-
-            Math.min(
-                width,
-                height
-            )
-
-            * 0.38;
-
-
-        const gradient =
-
-            ctx.createRadialGradient(
-
-                centerX,
-                centerY,
-                20,
-
-                centerX,
-                centerY,
-                radius
-
-            );
-
-
-        gradient.addColorStop(
-
-            0,
-
-            "rgba(148,216,244,0.10)"
-
-        );
-
-
-        gradient.addColorStop(
-
-            0.4,
-
-            "rgba(83,153,205,0.06)"
-
-        );
-
-
-        gradient.addColorStop(
-
-            1,
-
-            "rgba(16,34,65,0)"
-
-        );
-
-
-        ctx.fillStyle =
-            gradient;
-
-
-        ctx.fillRect(
-            0,
-            0,
-            width,
-            height
-        );
-
-    }
-
-
-    /* =========================================
-       CENTER TEXT
-    ========================================= */
-
-    function drawCenterText() {
-
-        ctx.save();
+            *
+            particle.sizeMult;
 
 
         /*
-          Sedikit area gelap di belakang
-          text tengah supaya tetap jelas.
+        Jangan sampai terlalu kecil
+        kalau dibuka dari HP.
         */
 
-        const centerGlow =
-
-            ctx.createRadialGradient(
-
-                centerX,
-                centerY,
-                0,
-
-                centerX,
-                centerY,
-                heartScale * 6
-
-            );
-
-
-        centerGlow.addColorStop(
-
-            0,
-
-            "rgba(16,34,65,0.82)"
-
-        );
-
-
-        centerGlow.addColorStop(
-
-            0.55,
-
-            "rgba(16,34,65,0.30)"
-
-        );
-
-
-        centerGlow.addColorStop(
-
-            1,
-
-            "rgba(16,34,65,0)"
-
-        );
-
-
-        ctx.fillStyle =
-            centerGlow;
-
-
-        ctx.fillRect(
-
-            centerX
-            -
-            heartScale * 8,
-
-            centerY
-            -
-            heartScale * 4,
-
-            heartScale * 16,
-
-            heartScale * 8
-
-        );
-
-
-        /*
-          Tulisan utama
-        */
-
-        const centerFont =
+        const finalFontSize =
 
             Math.max(
-                18,
-                heartScale * 1.25
+                fontSize,
+                5
             );
 
 
-        ctx.font =
-
-            `500 ${centerFont}px Georgia`;
+        ctx.save();
 
 
         ctx.textAlign =
@@ -848,21 +842,293 @@
             "middle";
 
 
-        ctx.fillStyle =
-            "#BDEDFB";
+        ctx.font =
 
+            `bold ${finalFontSize}px Arial`;
+
+
+        /*
+        ------------------------------
+        GLOW BESAR
+        ------------------------------
+        */
+
+        if (
+            alpha > 10
+        ) {
+
+            ctx.save();
+
+
+            ctx.translate(
+
+                particle.x,
+
+                particle.y
+
+            );
+
+
+            ctx.scale(
+                2.4,
+                2.4
+            );
+
+
+            ctx.globalAlpha =
+
+                (
+                    alpha / 255
+                )
+
+                /
+                7;
+
+
+            ctx.fillStyle =
+                particle.color;
+
+
+            ctx.fillText(
+
+                particle.word,
+
+                0,
+
+                0
+
+            );
+
+
+            ctx.restore();
+
+
+            /*
+            --------------------------
+            GLOW KECIL
+            --------------------------
+            */
+
+            ctx.save();
+
+
+            ctx.translate(
+
+                particle.x,
+
+                particle.y
+
+            );
+
+
+            ctx.scale(
+                1.6,
+                1.6
+            );
+
+
+            ctx.globalAlpha =
+
+                (
+                    alpha / 255
+                )
+
+                /
+                3;
+
+
+            ctx.fillStyle =
+                particle.color;
+
+
+            ctx.fillText(
+
+                particle.word,
+
+                0,
+
+                0
+
+            );
+
+
+            ctx.restore();
+
+        }
+
+
+        /*
+        ------------------------------
+        TEXT UTAMA
+        ------------------------------
+        */
+
+        ctx.globalAlpha =
+            alpha
+            /
+            255;
+
+
+        ctx.fillStyle =
+            particle.color;
+
+
+        /*
+        Glow tambahan browser,
+        supaya warna biru lebih cantik.
+        */
 
         ctx.shadowColor =
-            "#94D8F4";
+            particle.color;
 
 
         ctx.shadowBlur =
-            16;
+
+            Math.max(
+                4,
+                7 * displayScale
+            );
 
 
         ctx.fillText(
 
-            "I Love you",
+            particle.word,
+
+            particle.x,
+
+            particle.y
+
+        );
+
+
+        ctx.restore();
+
+    }
+
+
+    /*
+    ==========================================================
+    CENTER TEXT
+    ==========================================================
+    */
+
+    function drawCenterText() {
+
+        if (
+            frame
+            <=
+            centerStartFrame
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+        Sama seperti Python:
+
+        progress =
+        min(
+            1,
+            (frame - center_start)
+            / 60
+        )
+        */
+
+        const progress =
+
+            Math.min(
+
+                1,
+
+                (
+                    frame
+                    -
+                    centerStartFrame
+                )
+
+                /
+                60
+
+            );
+
+
+        /*
+        Sama seperti:
+
+        255 *
+        (1 - exp(-progress * 8))
+        */
+
+        const centerAlpha =
+
+            Math.floor(
+
+                255
+
+                *
+
+                (
+                    1
+
+                    -
+
+                    Math.exp(
+                        -progress
+                        *
+                        8
+                    )
+                )
+
+            );
+
+
+        /*
+        Pulse kecil hanya
+        pada center text.
+
+        Sama seperti Python.
+        */
+
+        const pulse =
+
+            1
+
+            +
+
+            0.025
+
+            *
+            Math.sin(
+                frame
+                *
+                0.05
+            );
+
+
+        /*
+        Python:
+        Georgia 54 bold.
+        */
+
+        const centerFontSize =
+
+            Math.max(
+
+                54
+                *
+                displayScale,
+
+                18
+
+            );
+
+
+        ctx.save();
+
+
+        ctx.translate(
 
             centerX,
 
@@ -871,152 +1137,118 @@
         );
 
 
-        ctx.restore();
+        ctx.scale(
 
-    }
+            pulse,
 
+            pulse
 
-    /* =========================================
-       EXTRA SMALL SPARKLES
-    ========================================= */
-
-    function drawSparkles() {
-
-        ctx.save();
+        );
 
 
-        const sparkleCount =
-            18;
+        ctx.textAlign =
+            "center";
 
 
-        for (
+        ctx.textBaseline =
+            "middle";
 
-            let i = 0;
 
-            i < sparkleCount;
+        ctx.font =
 
-            i++
+            `bold ${centerFontSize}px Georgia`;
 
+
+        /*
+        Warna center text
+        pakai warna paling terang
+        dari palette.
+        */
+
+        const centerColor =
+            "#BDEDFB";
+
+
+        /*
+        Glow center
+        */
+
+        if (
+            centerAlpha > 10
         ) {
 
-            const angle =
+            ctx.save();
+
+
+            ctx.scale(
+                1.4,
+                1.4
+            );
+
+
+            ctx.globalAlpha =
 
                 (
-                    i
-                    /
-                    sparkleCount
+                    centerAlpha / 255
                 )
 
-                *
-                Math.PI
-                *
-                2;
+                /
+                5;
 
 
-            const radius =
-
-                heartScale
-
-                *
-
-                (
-                    15
-
-                    +
-
-                    Math.sin(
-                        time
-                        +
-                        i
-                    )
-
-                    * 0.5
-                );
+            ctx.fillStyle =
+                "#94D8F4";
 
 
-            const x =
+            ctx.fillText(
 
-                centerX
-
-                +
-
-                Math.cos(angle)
-                *
-                radius;
-
-
-            const y =
-
-                centerY
-
-                +
-
-                Math.sin(angle)
-                *
-                radius
-                *
-                0.8;
-
-
-            const opacity =
-
-                0.25
-
-                +
-
-                (
-                    Math.sin(
-                        time * 2
-                        +
-                        i
-                    )
-
-                    +
-                    1
-                )
-
-                *
-                0.18;
-
-
-            ctx.beginPath();
-
-
-            ctx.arc(
-
-                x,
-                y,
-
-                1.2,
+                CENTER_TEXT,
 
                 0,
 
-                Math.PI * 2
+                0
 
             );
 
 
-            ctx.fillStyle =
-
-                `rgba(
-                    189,
-                    237,
-                    251,
-                    ${opacity}
-                )`;
-
-
-            ctx.shadowColor =
-                "#BDEDFB";
-
-
-            ctx.shadowBlur =
-                10;
-
-
-            ctx.fill();
+            ctx.restore();
 
         }
+
+
+        /*
+        Text center utama
+        */
+
+        ctx.globalAlpha =
+            centerAlpha
+            /
+            255;
+
+
+        ctx.fillStyle =
+            centerColor;
+
+
+        ctx.shadowColor =
+            "#94D8F4";
+
+
+        ctx.shadowBlur =
+            14
+            *
+            displayScale;
+
+
+        ctx.fillText(
+
+            CENTER_TEXT,
+
+            0,
+
+            0
+
+        );
 
 
         ctx.restore();
@@ -1024,86 +1256,520 @@
     }
 
 
-    /* =========================================
-       ANIMATION
-    ========================================= */
+    /*
+    ==========================================================
+    BUILD EVERYTHING
+    ==========================================================
+    */
 
-    function animate() {
+    function createParticles() {
+
+        /*
+        Outline
+        */
+
+        outlineParticles =
+
+            buildOutlineParticles(
+
+                160,
+
+                34
+
+            );
+
+
+        /*
+        Fill
+        */
+
+        fillParticles =
+
+            buildFillParticles(
+
+                130,
+
+                46
+
+            );
+
+
+        /*
+        Ambil order outline terbesar.
+        */
+
+        let outlineSpan = 0;
+
+
+        for (
+            const particle
+            of outlineParticles
+        ) {
+
+            if (
+
+                particle.order
+                >
+                outlineSpan
+
+            ) {
+
+                outlineSpan =
+                    particle.order;
+
+            }
+
+        }
+
+
+        /*
+        Sama seperti Python:
+        */
+
+        const framesPerStep =
+            1.6;
+
+
+        fillStartFrame =
+
+            Math.floor(
+
+                outlineSpan
+
+                *
+                framesPerStep
+
+            )
+
+            +
+            30;
+
+
+        /*
+        Delay fill random
+        */
+
+        for (
+            const particle
+            of fillParticles
+        ) {
+
+            particle.delay =
+
+                fillStartFrame
+
+                +
+
+                particle.order;
+
+        }
+
+
+        /*
+        Delay outline berurutan
+        */
+
+        for (
+            const particle
+            of outlineParticles
+        ) {
+
+            particle.delay =
+
+                Math.floor(
+
+                    particle.order
+
+                    *
+                    framesPerStep
+
+                );
+
+        }
+
+
+        /*
+        Gabungkan
+        */
+
+        particles = [
+
+            ...outlineParticles,
+
+            ...fillParticles
+
+        ];
+
+
+        /*
+        Center text mulai
+        saat fill belum 100% selesai.
+
+        Sama seperti Python:
+        */
+
+        centerStartFrame =
+
+            fillStartFrame
+
+            +
+            200;
+
+    }
+
+
+    /*
+    ==========================================================
+    RESIZE
+    ==========================================================
+    */
+
+    function resizeCanvas() {
+
+        const dpr =
+
+            window.devicePixelRatio
+
+            ||
+
+            1;
+
+
+        width =
+            window.innerWidth;
+
+
+        height =
+            window.innerHeight;
+
+
+        canvas.width =
+            width
+            *
+            dpr;
+
+
+        canvas.height =
+            height
+            *
+            dpr;
+
+
+        canvas.style.width =
+            width
+            +
+            "px";
+
+
+        canvas.style.height =
+            height
+            +
+            "px";
+
+
+        ctx.setTransform(
+
+            dpr,
+
+            0,
+
+            0,
+
+            dpr,
+
+            0,
+
+            0
+
+        );
+
+
+        /*
+        Responsive scaling.
+
+        Ratio original tetap dipertahankan.
+        */
+
+        displayScale =
+
+            Math.min(
+
+                width
+                /
+                BASE_WIDTH,
+
+                height
+                /
+                BASE_HEIGHT
+
+            );
+
+
+        /*
+        Sedikit dibesarkan di layar kecil
+        supaya heart tetap kelihatan.
+        */
+
+        if (
+            width < 700
+        ) {
+
+            displayScale *=
+                1.6;
+
+        }
+
+
+        heartScale =
+
+            BASE_SCALE
+
+            *
+            displayScale;
+
+
+        yOffset =
+
+            BASE_Y_OFFSET
+
+            *
+            displayScale;
+
+
+        centerX =
+            width / 2;
+
+
+        centerY =
+            height / 2;
+
+
+        /*
+        Reset animasi ketika resize.
+        */
+
+        frame = 0;
+
+
+        createParticles();
+
+    }
+
+
+    /*
+    ==========================================================
+    DRAW PARTICLES
+    ==========================================================
+    */
+
+    function updateAndDrawParticles() {
+
+        for (
+            const particle
+            of particles
+        ) {
+
+            /*
+            Fade in.
+
+            Sama seperti:
+
+            p.alpha +=
+            14 + random.randint(0, 4)
+            */
+
+            if (
+
+                frame
+                >
+                particle.delay
+
+                &&
+
+                particle.alpha
+                <
+                255
+
+            ) {
+
+                particle.alpha =
+
+                    Math.min(
+
+                        255,
+
+                        particle.alpha
+
+                        +
+
+                        14
+
+                        +
+
+                        randomInt(
+                            0,
+                            4
+                        )
+
+                    );
+
+            }
+
+
+            /*
+            Setelah alpha penuh,
+            baru flicker.
+            */
+
+            let flick = 1;
+
+
+            if (
+                particle.alpha
+                >=
+                255
+            ) {
+
+                flick =
+
+                    0.75
+
+                    +
+
+                    0.25
+
+                    *
+                    Math.sin(
+
+                        frame
+                        *
+                        0.04
+
+                        +
+
+                        particle.flicker
+
+                    );
+
+            }
+
+
+            const alpha =
+
+                Math.floor(
+
+                    particle.alpha
+
+                    *
+                    flick
+
+                );
+
+
+            if (
+                alpha <= 0
+            ) {
+
+                continue;
+
+            }
+
+
+            drawGlowText(
+
+                particle,
+
+                alpha
+
+            );
+
+        }
+
+    }
+
+
+    /*
+    ==========================================================
+    ANIMATION LOOP
+    ==========================================================
+    */
+
+    let lastFrameTime = 0;
+
+    const frameDuration =
+        1000
+        /
+        FPS;
+
+
+    function animate(timestamp) {
 
         requestAnimationFrame(
             animate
         );
 
 
-        time +=
-            0.016;
+        /*
+        Jaga supaya logika mendekati
+        60 FPS seperti Pygame.
+        */
+
+        if (
+
+            timestamp
+            -
+            lastFrameTime
+
+            <
+            frameDuration
+            *
+            0.8
+
+        ) {
+
+            return;
+
+        }
+
+
+        lastFrameTime =
+            timestamp;
+
+
+        frame++;
 
 
         /*
-          Background
+        Background flat navy.
+        Tidak ada moving gradient.
         */
 
-        ctx.clearRect(
-            0,
-            0,
-            width,
-            height
-        );
-
-
         ctx.fillStyle =
-            backgroundColor;
+            BACKGROUND_COLOR;
 
 
         ctx.fillRect(
+
             0,
+
             0,
+
             width,
+
             height
+
         );
 
 
         /*
-          Background blue aura
+        Draw semua I Love You
         */
 
-        drawBlueAura();
+        updateAndDrawParticles();
 
 
         /*
-          Glow di sekitar heart
-        */
-
-        drawHeartGlow();
-
-
-        /*
-          Semua tulisan sudah
-          langsung membentuk hati.
-        */
-
-        drawTextHeart();
-
-
-        /*
-          Shadow berputar.
-
-          Ini bagian motion utama.
-        */
-
-        drawMovingShadow();
-
-
-        /*
-          Sparkle kecil.
-        */
-
-        drawSparkles();
-
-
-        /*
-          Text tengah dibuat paling akhir
-          supaya tidak ikut hilang.
+        Draw tulisan tengah
         */
 
         drawCenterText();
@@ -1111,9 +1777,58 @@
     }
 
 
-    /* =========================================
-       START
-    ========================================= */
+    /*
+    ==========================================================
+    OPTIONAL:
+    CLICK UNTUK REPLAY
+
+    Tidak mengubah pattern.
+    Hanya mengulang animasi dari awal.
+    ==========================================================
+    */
+
+    function restartAnimation() {
+
+        frame = 0;
+
+        createParticles();
+
+    }
+
+
+    canvas.addEventListener(
+
+        "click",
+
+        restartAnimation
+
+    );
+
+
+    canvas.addEventListener(
+
+        "touchstart",
+
+        function(event) {
+
+            event.preventDefault();
+
+            restartAnimation();
+
+        },
+
+        {
+            passive: false
+        }
+
+    );
+
+
+    /*
+    ==========================================================
+    START
+    ==========================================================
+    */
 
     window.addEventListener(
 
@@ -1126,7 +1841,10 @@
 
     resizeCanvas();
 
-    animate();
+
+    requestAnimationFrame(
+        animate
+    );
 
 </script>
 
