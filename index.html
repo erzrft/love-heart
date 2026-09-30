@@ -1,318 +1,1135 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Blue Love Heart</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8">
 
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #102241;
-    }
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    body {
-      position: relative;
-      background:
-        radial-gradient(circle at top, rgba(148,216,244,0.15), transparent 35%),
-        radial-gradient(circle at bottom, rgba(30,122,193,0.18), transparent 30%),
-        linear-gradient(180deg, #1C4562 0%, #102241 45%, #102241 100%);
-    }
+    <title>I Love You 💙</title>
 
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
+    <style>
 
-    .title {
-      position: fixed;
-      top: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      color: #BDEDFB;
-      font-size: clamp(14px, 2vw, 22px);
-      letter-spacing: 4px;
-      text-align: center;
-      text-shadow:
-        0 0 8px rgba(189,237,251,0.9),
-        0 0 18px rgba(148,216,244,0.7),
-        0 0 30px rgba(83,153,205,0.5);
-      opacity: 0.9;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .sub {
-      position: fixed;
-      bottom: 22px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      color: rgba(189,237,251,0.75);
-      font-size: 12px;
-      letter-spacing: 2px;
-      text-align: center;
-      text-shadow: 0 0 10px rgba(148,216,244,0.3);
-    }
-  </style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+
+            background:
+                radial-gradient(
+                    circle at 50% 45%,
+                    #1C4562 0%,
+                    #102241 45%,
+                    #09162c 100%
+                );
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+        }
+
+        canvas {
+
+            position: fixed;
+
+            top: 0;
+            left: 0;
+
+            width: 100%;
+            height: 100%;
+
+        }
+
+    </style>
+
 </head>
+
+
 <body>
-  <div class="title">I LOVE YOU</div>
-  <div class="sub">blue glowing heart</div>
-  <canvas id="canvas"></canvas>
 
-  <script>
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+<canvas id="canvas"></canvas>
 
-    let w, h, cx, cy, scale;
-    let particles = [];
-    let stars = [];
-    let t = 0;
 
-    const textValue = "I Love You";
-    const heartCount = 180;
-    const starCount = 110;
+<script>
 
-    const palette = [
-      "#5399CD",
-      "#BDEDFB",
-      "#94D8F4",
-      "#86C3EB",
-      "#244C7E",
-      "#2D5D9A",
-      "#1E7AC1",
-      "#143C8C",
-      "#1C4562"
+    /* =========================================
+       CANVAS
+    ========================================= */
+
+    const canvas =
+        document.getElementById("canvas");
+
+    const ctx =
+        canvas.getContext("2d");
+
+
+    let width;
+    let height;
+
+    let centerX;
+    let centerY;
+
+    let heartScale;
+
+    let time = 0;
+
+
+    /* =========================================
+       COLOR PALETTE
+    ========================================= */
+
+    const backgroundColor =
+        "#102241";
+
+
+    const colors = [
+
+        "#5399CD",
+        "#BDEDFB",
+        "#94D8F4",
+        "#86C3EB",
+        "#244C7E",
+        "#2D5D9A",
+        "#1E7AC1",
+        "#143C8C",
+        "#1C4562"
+
     ];
 
-    function resize() {
-      const dpr = window.devicePixelRatio || 1;
-      w = window.innerWidth;
-      h = window.innerHeight;
 
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      canvas.style.width = w + "px";
-      canvas.style.height = h + "px";
+    /* =========================================
+       RESIZE
+    ========================================= */
 
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    function resizeCanvas() {
 
-      cx = w / 2;
-      cy = h / 2 + 10;
-      scale = Math.min(w, h) / 42;
+        const dpr =
+            window.devicePixelRatio || 1;
 
-      createStars();
-      createHeart();
+
+        width =
+            window.innerWidth;
+
+        height =
+            window.innerHeight;
+
+
+        canvas.width =
+            width * dpr;
+
+        canvas.height =
+            height * dpr;
+
+
+        canvas.style.width =
+            width + "px";
+
+        canvas.style.height =
+            height + "px";
+
+
+        ctx.setTransform(
+            dpr,
+            0,
+            0,
+            dpr,
+            0,
+            0
+        );
+
+
+        centerX =
+            width / 2;
+
+
+        centerY =
+            height / 2;
+
+
+        heartScale =
+
+            Math.min(
+                width,
+                height
+            )
+
+            / 39;
+
     }
 
-    function heartPoint(a) {
-      const x = 16 * Math.pow(Math.sin(a), 3);
-      const y =
-        13 * Math.cos(a) -
-        5 * Math.cos(2 * a) -
-        2 * Math.cos(3 * a) -
-        Math.cos(4 * a);
 
-      return { x, y };
+    /* =========================================
+       HEART FORMULA
+    ========================================= */
+
+    function getHeartPoint(angle) {
+
+        const x =
+
+            16 *
+
+            Math.pow(
+                Math.sin(angle),
+                3
+            );
+
+
+        const y =
+
+            13 * Math.cos(angle)
+
+            -
+
+            5 * Math.cos(
+                2 * angle
+            )
+
+            -
+
+            2 * Math.cos(
+                3 * angle
+            )
+
+            -
+
+            Math.cos(
+                4 * angle
+            );
+
+
+        return {
+
+            x:
+                centerX
+                +
+                x * heartScale,
+
+            y:
+                centerY
+                -
+                y * heartScale
+
+        };
+
     }
 
-    class Star {
-      constructor() {
-        this.reset();
-      }
 
-      reset() {
-        this.x = Math.random() * w;
-        this.y = Math.random() * h;
-        this.r = Math.random() * 1.8 + 0.3;
-        this.alpha = Math.random() * 0.8 + 0.2;
-        this.speed = Math.random() * 0.25 + 0.05;
-      }
+    /* =========================================
+       CREATE HEART PATH
+    ========================================= */
 
-      update() {
-        this.y += this.speed;
-        if (this.y > h + 10) {
-          this.y = -10;
-          this.x = Math.random() * w;
-        }
-      }
+    function createHeartPath() {
 
-      draw() {
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(189,237,251,${this.alpha})`;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#BDEDFB";
-        ctx.fill();
-      }
+
+
+        const totalPoints =
+            500;
+
+
+        for (
+            let i = 0;
+            i <= totalPoints;
+            i++
+        ) {
+
+            const angle =
+
+                (
+                    i / totalPoints
+                )
+
+                *
+
+                Math.PI * 2;
+
+
+            const point =
+                getHeartPoint(angle);
+
+
+            if (
+                i === 0
+            ) {
+
+                ctx.moveTo(
+                    point.x,
+                    point.y
+                );
+
+            }
+
+            else {
+
+                ctx.lineTo(
+                    point.x,
+                    point.y
+                );
+
+            }
+
+        }
+
+
+        ctx.closePath();
+
     }
 
-    class LoveParticle {
-      constructor(tx, ty, i, ring = 1) {
-        this.tx = tx;
-        this.ty = ty;
-        this.x = cx + (Math.random() - 0.5) * 500;
-        this.y = cy + (Math.random() - 0.5) * 500;
-        this.vx = 0;
-        this.vy = 0;
-        this.i = i;
-        this.ring = ring;
 
-        this.size = ring === 1
-          ? 8 + Math.random() * 3
-          : 6 + Math.random() * 2;
+    /* =========================================
+       HEART BACKGROUND GLOW
+    ========================================= */
 
-        this.color = palette[Math.floor(Math.random() * palette.length)];
-        this.alpha = ring === 1 ? 0.95 : 0.6;
-        this.floatSeed = Math.random() * Math.PI * 2;
-      }
+    function drawHeartGlow() {
 
-      update(time) {
-        const offsetX = Math.sin(time * 1.4 + this.floatSeed + this.i * 0.05) * (this.ring === 1 ? 3 : 2);
-        const offsetY = Math.cos(time * 1.2 + this.floatSeed + this.i * 0.04) * (this.ring === 1 ? 3 : 2);
-
-        const targetX = this.tx + offsetX;
-        const targetY = this.ty + offsetY;
-
-        const dx = targetX - this.x;
-        const dy = targetY - this.y;
-
-        this.vx += dx * 0.018;
-        this.vy += dy * 0.018;
-
-        this.vx *= 0.88;
-        this.vy *= 0.88;
-
-        this.x += this.vx;
-        this.y += this.vy;
-      }
-
-      draw() {
         ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.font = `bold ${this.size}px Arial`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.globalAlpha = this.alpha;
 
-        ctx.shadowBlur = 14;
-        ctx.shadowColor = this.color;
-        ctx.fillStyle = this.color;
-        ctx.fillText(textValue, 0, 0);
+
+        createHeartPath();
+
+
+        ctx.shadowColor =
+            "#94D8F4";
+
+
+        ctx.shadowBlur =
+            45;
+
+
+        ctx.strokeStyle =
+            "rgba(148,216,244,0.22)";
+
+
+        ctx.lineWidth =
+            6;
+
+
+        ctx.stroke();
+
 
         ctx.restore();
-      }
+
     }
 
-    function createStars() {
-      stars = [];
-      for (let i = 0; i < starCount; i++) {
-        stars.push(new Star());
-      }
+
+    /* =========================================
+       REPEATED I LOVE YOU TEXT
+    ========================================= */
+
+    function drawTextHeart() {
+
+        ctx.save();
+
+
+        createHeartPath();
+
+        ctx.clip();
+
+
+        const heartWidth =
+            heartScale * 34;
+
+
+        const heartHeight =
+            heartScale * 31;
+
+
+        const left =
+            centerX
+            -
+            heartWidth / 2;
+
+
+        const top =
+            centerY
+            -
+            heartHeight / 2;
+
+
+        const lineHeight =
+
+            Math.max(
+                10,
+                heartScale * 0.72
+            );
+
+
+        const fontSize =
+
+            Math.max(
+                7,
+                heartScale * 0.47
+            );
+
+
+        let row =
+            0;
+
+
+        for (
+
+            let y = top - 20;
+
+            y <
+            top + heartHeight + 30;
+
+            y += lineHeight
+
+        ) {
+
+            const color =
+
+                colors[
+                    row
+                    %
+                    colors.length
+                ];
+
+
+            /*
+              Gerakan kecil horizontal
+              supaya teks terasa hidup,
+              bukan beterbangan.
+            */
+
+            const movement =
+
+                Math.sin(
+                    time * 0.7
+                    +
+                    row * 0.7
+                )
+
+                * 4;
+
+
+            let x =
+
+                left
+                -
+                100
+                +
+                movement;
+
+
+            ctx.font =
+
+                `500 ${fontSize}px Arial`;
+
+
+            ctx.textBaseline =
+                "middle";
+
+
+            ctx.fillStyle =
+                color;
+
+
+            ctx.shadowColor =
+                color;
+
+
+            ctx.shadowBlur =
+                7;
+
+
+            /*
+              Isi satu baris dengan
+              tulisan I Love You
+            */
+
+            while (
+
+                x
+                <
+                left
+                +
+                heartWidth
+                +
+                120
+
+            ) {
+
+                ctx.fillText(
+
+                    "I Love You",
+
+                    x,
+
+                    y
+
+                );
+
+
+                x +=
+
+                    fontSize
+                    *
+                    5.8;
+
+            }
+
+
+            row++;
+
+        }
+
+
+        ctx.restore();
+
     }
 
-    function createHeart() {
-      particles = [];
 
-      for (let i = 0; i < heartCount; i++) {
-        const a = (i / heartCount) * Math.PI * 2;
-        const p = heartPoint(a);
+    /* =========================================
+       ROTATING SHADOW
+       INI MOTION UTAMA SEPERTI VIDEO
+    ========================================= */
 
-        const x = cx + p.x * scale;
-        const y = cy - p.y * scale;
+    function drawMovingShadow() {
 
-        particles.push(new LoveParticle(x, y, i, 1));
-      }
+        ctx.save();
 
-      const innerCount = 95;
-      for (let i = 0; i < innerCount; i++) {
-        const a = (i / innerCount) * Math.PI * 2;
-        const p = heartPoint(a);
 
-        const x = cx + p.x * scale * 0.78;
-        const y = cy - p.y * scale * 0.78;
+        createHeartPath();
 
-        particles.push(new LoveParticle(x, y, i, 2));
-      }
+        ctx.clip();
+
+
+        /*
+          Shadow bergerak mengelilingi
+          pusat hati.
+        */
+
+        const angle =
+            time * 1.35;
+
+
+        const heartRadius =
+
+            Math.min(
+                width,
+                height
+            )
+
+            * 0.23;
+
+
+        /*
+          Posisi shadow berputar.
+        */
+
+        const orbitRadius =
+
+            heartRadius
+            *
+            0.60;
+
+
+        const shadowX =
+
+            centerX
+
+            +
+
+            Math.cos(angle)
+            *
+            orbitRadius;
+
+
+        const shadowY =
+
+            centerY
+
+            +
+
+            Math.sin(angle)
+            *
+            orbitRadius;
+
+
+        /*
+          Ukuran shadow berubah sedikit.
+
+          Ini yang bikin kadang hati
+          hampir penuh dan kadang
+          sebagian besar gelap.
+        */
+
+        const shadowSize =
+
+            heartRadius
+
+            *
+
+            (
+                0.80
+
+                +
+
+                Math.sin(
+                    time * 1.35
+                )
+
+                * 0.22
+            );
+
+
+        const gradient =
+
+            ctx.createRadialGradient(
+
+                shadowX,
+                shadowY,
+                shadowSize * 0.05,
+
+                shadowX,
+                shadowY,
+                shadowSize
+
+            );
+
+
+        gradient.addColorStop(
+
+            0,
+
+            "rgba(9,22,44,1)"
+
+        );
+
+
+        gradient.addColorStop(
+
+            0.38,
+
+            "rgba(9,22,44,0.98)"
+
+        );
+
+
+        gradient.addColorStop(
+
+            0.62,
+
+            "rgba(16,34,65,0.88)"
+
+        );
+
+
+        gradient.addColorStop(
+
+            0.82,
+
+            "rgba(16,34,65,0.35)"
+
+        );
+
+
+        gradient.addColorStop(
+
+            1,
+
+            "rgba(16,34,65,0)"
+
+        );
+
+
+        ctx.fillStyle =
+            gradient;
+
+
+        ctx.fillRect(
+
+            centerX
+            -
+            heartRadius * 2,
+
+            centerY
+            -
+            heartRadius * 2,
+
+            heartRadius * 4,
+
+            heartRadius * 4
+
+        );
+
+
+        ctx.restore();
+
     }
 
-    function drawBackgroundGlow(time) {
-      const pulse = 0.96 + Math.sin(time * 1.8) * 0.02;
-      const radius = Math.min(w, h) * 0.34 * pulse;
 
-      const glow = ctx.createRadialGradient(
-        cx, cy, 20,
-        cx, cy, radius
-      );
+    /* =========================================
+       SOFT BLUE LIGHT
+    ========================================= */
 
-      glow.addColorStop(0, "rgba(189,237,251,0.18)");
-      glow.addColorStop(0.35, "rgba(148,216,244,0.12)");
-      glow.addColorStop(0.65, "rgba(83,153,205,0.08)");
-      glow.addColorStop(1, "rgba(16,34,65,0)");
+    function drawBlueAura() {
 
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, w, h);
+        const radius =
+
+            Math.min(
+                width,
+                height
+            )
+
+            * 0.38;
+
+
+        const gradient =
+
+            ctx.createRadialGradient(
+
+                centerX,
+                centerY,
+                20,
+
+                centerX,
+                centerY,
+                radius
+
+            );
+
+
+        gradient.addColorStop(
+
+            0,
+
+            "rgba(148,216,244,0.10)"
+
+        );
+
+
+        gradient.addColorStop(
+
+            0.4,
+
+            "rgba(83,153,205,0.06)"
+
+        );
+
+
+        gradient.addColorStop(
+
+            1,
+
+            "rgba(16,34,65,0)"
+
+        );
+
+
+        ctx.fillStyle =
+            gradient;
+
+
+        ctx.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
     }
 
-    function drawOuterAura(time) {
-      ctx.save();
-      ctx.beginPath();
 
-      for (let i = 0; i <= 220; i++) {
-        const a = (i / 220) * Math.PI * 2;
-        const p = heartPoint(a);
+    /* =========================================
+       CENTER TEXT
+    ========================================= */
 
-        const pulse = 1 + Math.sin(time * 2) * 0.018;
-        const x = cx + p.x * scale * 1.08 * pulse;
-        const y = cy - p.y * scale * 1.08 * pulse;
+    function drawCenterText() {
 
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
+        ctx.save();
 
-      ctx.closePath();
-      ctx.strokeStyle = "rgba(148,216,244,0.35)";
-      ctx.lineWidth = 2;
-      ctx.shadowBlur = 25;
-      ctx.shadowColor = "#94D8F4";
-      ctx.stroke();
-      ctx.restore();
+
+        /*
+          Sedikit area gelap di belakang
+          text tengah supaya tetap jelas.
+        */
+
+        const centerGlow =
+
+            ctx.createRadialGradient(
+
+                centerX,
+                centerY,
+                0,
+
+                centerX,
+                centerY,
+                heartScale * 6
+
+            );
+
+
+        centerGlow.addColorStop(
+
+            0,
+
+            "rgba(16,34,65,0.82)"
+
+        );
+
+
+        centerGlow.addColorStop(
+
+            0.55,
+
+            "rgba(16,34,65,0.30)"
+
+        );
+
+
+        centerGlow.addColorStop(
+
+            1,
+
+            "rgba(16,34,65,0)"
+
+        );
+
+
+        ctx.fillStyle =
+            centerGlow;
+
+
+        ctx.fillRect(
+
+            centerX
+            -
+            heartScale * 8,
+
+            centerY
+            -
+            heartScale * 4,
+
+            heartScale * 16,
+
+            heartScale * 8
+
+        );
+
+
+        /*
+          Tulisan utama
+        */
+
+        const centerFont =
+
+            Math.max(
+                18,
+                heartScale * 1.25
+            );
+
+
+        ctx.font =
+
+            `500 ${centerFont}px Georgia`;
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.textBaseline =
+            "middle";
+
+
+        ctx.fillStyle =
+            "#BDEDFB";
+
+
+        ctx.shadowColor =
+            "#94D8F4";
+
+
+        ctx.shadowBlur =
+            16;
+
+
+        ctx.fillText(
+
+            "I Love you",
+
+            centerX,
+
+            centerY
+
+        );
+
+
+        ctx.restore();
+
     }
+
+
+    /* =========================================
+       EXTRA SMALL SPARKLES
+    ========================================= */
+
+    function drawSparkles() {
+
+        ctx.save();
+
+
+        const sparkleCount =
+            18;
+
+
+        for (
+
+            let i = 0;
+
+            i < sparkleCount;
+
+            i++
+
+        ) {
+
+            const angle =
+
+                (
+                    i
+                    /
+                    sparkleCount
+                )
+
+                *
+                Math.PI
+                *
+                2;
+
+
+            const radius =
+
+                heartScale
+
+                *
+
+                (
+                    15
+
+                    +
+
+                    Math.sin(
+                        time
+                        +
+                        i
+                    )
+
+                    * 0.5
+                );
+
+
+            const x =
+
+                centerX
+
+                +
+
+                Math.cos(angle)
+                *
+                radius;
+
+
+            const y =
+
+                centerY
+
+                +
+
+                Math.sin(angle)
+                *
+                radius
+                *
+                0.8;
+
+
+            const opacity =
+
+                0.25
+
+                +
+
+                (
+                    Math.sin(
+                        time * 2
+                        +
+                        i
+                    )
+
+                    +
+                    1
+                )
+
+                *
+                0.18;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                x,
+                y,
+
+                1.2,
+
+                0,
+
+                Math.PI * 2
+
+            );
+
+
+            ctx.fillStyle =
+
+                `rgba(
+                    189,
+                    237,
+                    251,
+                    ${opacity}
+                )`;
+
+
+            ctx.shadowColor =
+                "#BDEDFB";
+
+
+            ctx.shadowBlur =
+                10;
+
+
+            ctx.fill();
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    /* =========================================
+       ANIMATION
+    ========================================= */
 
     function animate() {
-      requestAnimationFrame(animate);
-      t += 0.016;
 
-      ctx.clearRect(0, 0, w, h);
+        requestAnimationFrame(
+            animate
+        );
 
-      drawBackgroundGlow(t);
 
-      stars.forEach(star => {
-        star.update();
-        star.draw();
-      });
+        time +=
+            0.016;
 
-      drawOuterAura(t);
 
-      particles.forEach(p => {
-        p.update(t);
-        p.draw();
-      });
+        /*
+          Background
+        */
+
+        ctx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        ctx.fillStyle =
+            backgroundColor;
+
+
+        ctx.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        /*
+          Background blue aura
+        */
+
+        drawBlueAura();
+
+
+        /*
+          Glow di sekitar heart
+        */
+
+        drawHeartGlow();
+
+
+        /*
+          Semua tulisan sudah
+          langsung membentuk hati.
+        */
+
+        drawTextHeart();
+
+
+        /*
+          Shadow berputar.
+
+          Ini bagian motion utama.
+        */
+
+        drawMovingShadow();
+
+
+        /*
+          Sparkle kecil.
+        */
+
+        drawSparkles();
+
+
+        /*
+          Text tengah dibuat paling akhir
+          supaya tidak ikut hilang.
+        */
+
+        drawCenterText();
+
     }
 
-    window.addEventListener("resize", resize);
 
-    resize();
+    /* =========================================
+       START
+    ========================================= */
+
+    window.addEventListener(
+
+        "resize",
+
+        resizeCanvas
+
+    );
+
+
+    resizeCanvas();
+
     animate();
-  </script>
+
+</script>
+
 </body>
+
 </html>
