@@ -38,9 +38,9 @@
             height: 100%;
         }
 
-        /* ============================
+        /* ==============================
            START SCREEN
-        ============================ */
+        ============================== */
 
         #startScreen {
             position: fixed;
@@ -103,6 +103,7 @@
         }
 
         @keyframes startPulse {
+
             0%,
             100% {
                 transform: scale(1);
@@ -111,6 +112,7 @@
             50% {
                 transform: scale(1.1);
             }
+
         }
     </style>
 </head>
@@ -118,7 +120,10 @@
 
 <body>
 
-    <!-- START SCREEN -->
+
+    <!-- ==============================
+         START SCREEN
+    ============================== -->
 
     <div id="startScreen">
 
@@ -137,12 +142,16 @@
     </div>
 
 
-    <!-- CANVAS -->
+    <!-- ==============================
+         CANVAS
+    ============================== -->
 
     <canvas id="canvas"></canvas>
 
 
-    <!-- AUDIO -->
+    <!-- ==============================
+         AUDIO
+    ============================== -->
 
     <audio
         id="music"
@@ -209,8 +218,8 @@ const SONG_DURATION =
 
 
 /*
-0–8 detik
-Outline hati.
+0–8 detik:
+outline
 */
 
 const OUTLINE_START =
@@ -221,8 +230,8 @@ const OUTLINE_END =
 
 
 /*
-8–35 detik
-Isi hati.
+8–35 detik:
+fill
 */
 
 const FILL_START =
@@ -233,8 +242,8 @@ const FILL_END =
 
 
 /*
-35–38 detik
-Tulisan besar.
+35–38 detik:
+center text
 */
 
 const CENTER_START =
@@ -285,8 +294,8 @@ WORDS
 
 
 /*
-Outline hati tetap
-I Love You.
+Outline tetap satu kata
+supaya bentuk hati rapi.
 */
 
 const OUTLINE_WORDS = [
@@ -297,7 +306,7 @@ const OUTLINE_WORDS = [
 
 
 /*
-Isi bagian dalam.
+Bagian dalam hati.
 */
 
 const FILL_WORDS = [
@@ -320,7 +329,7 @@ const FILL_WORDS = [
 
 
 /*
-Ending.
+Tulisan besar ending.
 */
 
 const CENTER_TEXT =
@@ -329,7 +338,7 @@ const CENTER_TEXT =
 
 /*
 ==========================================================
-CANVAS VARIABLES
+VARIABLES
 ==========================================================
 */
 
@@ -480,6 +489,7 @@ class Particle {
         this.y =
             y;
 
+
         this.order =
             order;
 
@@ -488,8 +498,7 @@ class Particle {
 
 
         /*
-        Outline dan fill
-        punya text berbeda.
+        Teks berdasarkan jenis.
         */
 
         if (
@@ -514,7 +523,7 @@ class Particle {
 
 
         /*
-        Random warna.
+        Random color.
         */
 
         this.color =
@@ -524,8 +533,7 @@ class Particle {
 
 
         /*
-        Setiap tulisan punya
-        flicker sendiri.
+        Flicker phase berbeda.
         */
 
         this.flicker =
@@ -540,7 +548,7 @@ class Particle {
 
 
         /*
-        Random ukuran kecil.
+        Sedikit variasi ukuran.
         */
 
         this.sizeMult =
@@ -555,7 +563,7 @@ class Particle {
 
 
         /*
-        Waktu particle muncul.
+        Waktu muncul.
         */
 
         this.revealTime =
@@ -675,8 +683,6 @@ function toScreen(
 /*
 ==========================================================
 BUILD OUTLINE
-
-Pattern tetap seperti source awal.
 ==========================================================
 */
 
@@ -717,9 +723,9 @@ function buildOutlineParticles(
             )
 
             *
-            2
+            Math.PI
             *
-            Math.PI;
+            2;
 
 
         const heart =
@@ -821,18 +827,17 @@ function buildOutlineParticles(
 /*
 ==========================================================
 BUILD FILL
+==========================================================
 
-Masih pola random seperti source awal.
+Lebih padat supaya cukup
+mengisi durasi sampai detik 35.
 
-Bedanya:
-jumlah dibuat lebih banyak
-supaya 27 detik tidak kosong.
 ==========================================================
 */
 
 function buildFillParticles(
-    nFill = 200,
-    minGap = 32
+    nFill = 210,
+    minGap = 31
 ) {
 
     const result =
@@ -851,7 +856,7 @@ function buildFillParticles(
         nFill
 
         *
-        140;
+        150;
 
 
     const scaledGap =
@@ -880,7 +885,7 @@ function buildFillParticles(
 
 
         /*
-        Random angle.
+        Posisi random di dalam heart.
         */
 
         const t =
@@ -889,17 +894,12 @@ function buildFillParticles(
 
                 0,
 
-                Math.PI * 2
+                Math.PI
+                *
+                2
 
             );
 
-
-        /*
-        Random radius.
-
-        0–0.88 =
-        masih berada dalam heart.
-        */
 
         const r =
 
@@ -1059,6 +1059,7 @@ function shuffle(
         [
             array[i],
             array[j]
+
         ]
 
         =
@@ -1075,14 +1076,7 @@ function shuffle(
 
 /*
 ==========================================================
-TIMING
-
-Pattern motion tetap:
-outline berurutan,
-fill random.
-
-Yang berubah cuma waktunya
-dibentangkan sampai 38 detik.
+SET TIMING
 ==========================================================
 */
 
@@ -1090,9 +1084,11 @@ function setRevealTimes() {
 
 
     /*
-    ==============================
-    OUTLINE 0–8 DETIK
-    ==============================
+    ======================================================
+    OUTLINE
+    ======================================================
+
+    Berurutan membentuk hati.
     */
 
     outlineParticles.forEach(
@@ -1141,11 +1137,11 @@ function setRevealTimes() {
 
 
     /*
-    ==============================
-    FILL 8–35 DETIK
+    ======================================================
+    FILL
+    ======================================================
 
-    Urutan diacak.
-    ==============================
+    Random seperti motion original.
     */
 
     shuffle(
@@ -1178,18 +1174,16 @@ function setRevealTimes() {
 
 
             /*
-            Sedikit random delay
-            supaya tidak terasa
-            terlalu teratur.
+            Random sedikit.
             */
 
             const jitter =
 
                 randomFloat(
 
-                    -0.07,
+                    -0.10,
 
-                    0.07
+                    0.10
 
                 );
 
@@ -1223,7 +1217,7 @@ function setRevealTimes() {
 
 /*
 ==========================================================
-CREATE
+CREATE PARTICLES
 ==========================================================
 */
 
@@ -1244,9 +1238,9 @@ function createParticles() {
 
         buildFillParticles(
 
-            200,
+            210,
 
-            32
+            31
 
         );
 
@@ -1267,13 +1261,28 @@ function createParticles() {
 
 /*
 ==========================================================
-DRAW TEXT + GLOW
+DRAW PARTICLE TEXT
+==========================================================
+
+CATATAN:
+
+Glow utama tetap permanen.
+
+Yang fade out cuma:
+
+- layer 2.4x
+- layer 1.6x
+
+alias halo / shadow tipis
+di belakang tulisan.
+
 ==========================================================
 */
 
 function drawGlowText(
     particle,
-    alpha
+    alpha,
+    shadowStrength
 ) {
 
     if (
@@ -1286,10 +1295,7 @@ function drawGlowText(
 
 
     /*
-    Outline agak besar.
-
-    Fill sedikit lebih kecil
-    karena kalimatnya panjang.
+    Font outline dan fill.
     */
 
     const baseSize =
@@ -1341,13 +1347,21 @@ function drawGlowText(
 
 
     /*
-    ==============================
-    GLOW BESAR
-    ==============================
+    ======================================================
+    SHADOW / HALO BESAR
+
+    Fade out setelah tulisan muncul.
+    ======================================================
     */
 
     if (
+
         alpha > 10
+
+        &&
+
+        shadowStrength > 0
+
     ) {
 
         ctx.save();
@@ -1374,11 +1388,17 @@ function drawGlowText(
         ctx.globalAlpha =
 
             (
-                alpha / 255
+                alpha
+                /
+                255
             )
 
             /
-            7;
+            7
+
+            *
+
+            shadowStrength;
 
 
         ctx.fillStyle =
@@ -1400,9 +1420,9 @@ function drawGlowText(
 
 
         /*
-        ==========================
-        GLOW KECIL
-        ==========================
+        ==================================================
+        SHADOW / HALO KECIL
+        ==================================================
         */
 
         ctx.save();
@@ -1429,11 +1449,17 @@ function drawGlowText(
         ctx.globalAlpha =
 
             (
-                alpha / 255
+                alpha
+                /
+                255
             )
 
             /
-            3;
+            3
+
+            *
+
+            shadowStrength;
 
 
         ctx.fillStyle =
@@ -1457,9 +1483,11 @@ function drawGlowText(
 
 
     /*
-    ==============================
+    ======================================================
     TEXT UTAMA
-    ==============================
+
+    Glow ini tetap permanen.
+    ======================================================
     */
 
     ctx.globalAlpha =
@@ -1478,6 +1506,10 @@ function drawGlowText(
         particle.color;
 
 
+    /*
+    GLOW UTAMA TETAP.
+    */
+
     ctx.shadowBlur =
 
         Math.max(
@@ -1485,6 +1517,7 @@ function drawGlowText(
             4,
 
             7
+
             *
             displayScale
 
@@ -1522,6 +1555,10 @@ function drawParticles(
         of particles
     ) {
 
+        /*
+        Belum muncul.
+        */
+
         if (
 
             currentTime
@@ -1537,8 +1574,9 @@ function drawParticles(
 
 
         /*
-        Sama feel dengan alpha
-        naik pada source Python.
+        ==================================================
+        FADE-IN TEKS
+        ==================================================
         */
 
         const fadeDuration =
@@ -1576,8 +1614,11 @@ function drawParticles(
 
 
         /*
-        Setelah muncul,
-        flicker seperti original.
+        ==================================================
+        FLICKER
+
+        Tetap seperti source awal.
+        ==================================================
         */
 
         if (
@@ -1613,11 +1654,56 @@ function drawParticles(
         }
 
 
+        /*
+        ==================================================
+        SHADOW FADE OUT
+
+        Shadow besar hanya muncul
+        selama ±1 detik pertama.
+
+        Glow utama tidak ikut hilang.
+        ==================================================
+        */
+
+        const age =
+
+            currentTime
+
+            -
+
+            particle.revealTime;
+
+
+        const shadowDuration =
+            1.0;
+
+
+        const shadowStrength =
+
+            clamp(
+
+                1
+
+                -
+
+                age
+                /
+                shadowDuration,
+
+                0,
+
+                1
+
+            );
+
+
         drawGlowText(
 
             particle,
 
-            alpha
+            alpha,
+
+            shadowStrength
 
         );
 
@@ -1629,8 +1715,14 @@ function drawParticles(
 /*
 ==========================================================
 CENTER TEXT
+==========================================================
 
-35–38 detik.
+Muncul pada 3 detik terakhir.
+
+Shadow besar fade out.
+
+Glow utama tetap.
+
 ==========================================================
 */
 
@@ -1651,6 +1743,10 @@ function drawCenterText(
 
     }
 
+
+    /*
+    Progress 35–38.
+    */
 
     const progress =
 
@@ -1680,7 +1776,7 @@ function drawCenterText(
 
 
     /*
-    Fade smooth.
+    Fade teks.
     */
 
     const fade =
@@ -1701,8 +1797,7 @@ function drawCenterText(
 
 
     /*
-    Masuk dari 85%
-    ke 100%.
+    Scale-in.
     */
 
     const scaleIn =
@@ -1718,8 +1813,7 @@ function drawCenterText(
 
 
     /*
-    Pulse kecil
-    seperti source awal.
+    Pulse kecil.
     */
 
     const pulse =
@@ -1747,6 +1841,44 @@ function drawCenterText(
 
         *
         pulse;
+
+
+    /*
+    ======================================================
+    CENTER SHADOW FADE OUT
+    ======================================================
+    */
+
+    const centerAge =
+
+        currentTime
+
+        -
+
+        CENTER_START;
+
+
+    const centerShadowDuration =
+        1.2;
+
+
+    const centerShadowStrength =
+
+        clamp(
+
+            1
+
+            -
+
+            centerAge
+            /
+            centerShadowDuration,
+
+            0,
+
+            1
+
+        );
 
 
     const centerFontSize =
@@ -1798,46 +1930,115 @@ function drawCenterText(
 
 
     /*
-    Glow besar.
+    ======================================================
+    SHADOW / HALO CENTER
+
+    Ini fade out.
+    ======================================================
     */
 
-    ctx.globalAlpha =
+    if (
+        centerShadowStrength > 0
+    ) {
 
-        fade
+        /*
+        Halo besar.
+        */
 
-        *
-        0.20;
-
-
-    ctx.fillStyle =
-        "#94D8F4";
-
-
-    ctx.shadowColor =
-        "#94D8F4";
+        ctx.save();
 
 
-    ctx.shadowBlur =
+        ctx.scale(
 
-        42
+            1.45,
 
-        *
-        displayScale;
+            1.45
+
+        );
 
 
-    ctx.fillText(
+        ctx.globalAlpha =
 
-        CENTER_TEXT,
+            fade
 
-        0,
+            *
+            0.18
 
-        0
+            *
+            centerShadowStrength;
 
-    );
+
+        ctx.fillStyle =
+            "#94D8F4";
+
+
+        ctx.fillText(
+
+            CENTER_TEXT,
+
+            0,
+
+            0
+
+        );
+
+
+        ctx.restore();
+
+
+        /*
+        Halo kecil.
+        */
+
+        ctx.save();
+
+
+        ctx.scale(
+
+            1.18,
+
+            1.18
+
+        );
+
+
+        ctx.globalAlpha =
+
+            fade
+
+            *
+            0.25
+
+            *
+            centerShadowStrength;
+
+
+        ctx.fillStyle =
+            "#94D8F4";
+
+
+        ctx.fillText(
+
+            CENTER_TEXT,
+
+            0,
+
+            0
+
+        );
+
+
+        ctx.restore();
+
+    }
 
 
     /*
-    Text utama.
+    ======================================================
+    CENTER TEXT UTAMA
+
+    Glow tetap permanen.
+    ======================================================
     */
 
     ctx.globalAlpha =
@@ -1852,12 +2053,22 @@ function drawCenterText(
         "#94D8F4";
 
 
+    /*
+    GLOW TETAP ADA.
+    */
+
     ctx.shadowBlur =
 
-        18
+        Math.max(
 
-        *
-        displayScale;
+            10,
+
+            18
+
+            *
+            displayScale
+
+        );
 
 
     ctx.fillText(
@@ -1905,7 +2116,7 @@ function drawBackground() {
 
 /*
 ==========================================================
-ANIMATION
+ANIMATION LOOP
 ==========================================================
 */
 
@@ -1929,8 +2140,7 @@ function animate() {
 
 
     /*
-    Audio cuma digunakan
-    sebagai timer 38 detik.
+    Audio cuma jadi timer.
 
     Tidak ada beat sync.
     */
@@ -2012,6 +2222,11 @@ async function startExperience() {
 
 }
 
+
+/*
+Klik sekali:
+audio + animasi mulai.
+*/
 
 startScreen.addEventListener(
 
@@ -2096,6 +2311,10 @@ function resizeCanvas() {
     );
 
 
+    /*
+    Responsive scaling.
+    */
+
     displayScale =
 
         Math.min(
@@ -2110,6 +2329,10 @@ function resizeCanvas() {
 
         );
 
+
+    /*
+    Mobile adjustment.
+    */
 
     if (
         width < 700
@@ -2152,10 +2375,7 @@ function resizeCanvas() {
 
 /*
 ==========================================================
-FINISH
-
-Setelah lagu selesai,
-tampilan terakhir tetap.
+AUDIO FINISH
 ==========================================================
 */
 
@@ -2167,6 +2387,9 @@ music.addEventListener(
 
         /*
         Tidak restart.
+
+        Tampilan terakhir
+        tetap terlihat.
         */
 
     }
